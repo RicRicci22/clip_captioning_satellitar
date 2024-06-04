@@ -7,7 +7,7 @@ from torchvision import transforms as T
 from torch.utils.data import DataLoader
 from transformers import get_cosine_schedule_with_warmup
 import torch.nn as nn
-from dataset import get_datasets, RSICD_, UCM, NWPU, SIDNEY
+from dataset import get_dataset, get_datasets, RSICD_, UCM, NWPU, SIDNEY
 from model import ClipGPT, CLIP, REMOTE_CLIP, VGG
 import argparse
 from huggingface_hub import hf_hub_download
@@ -39,6 +39,8 @@ parser.add_argument('--ucm_path', type=str, default='data/ucm/', help='Path to U
 parser.add_argument('--nwpu_path', type=str, default='data/nwpu/', help='Path to NWPU dataset')
 parser.add_argument('--sydney_path', type=str, default='data/sidney', help='Path to SIDNEY dataset')
 
+parser.add_argument('--rsgpt_path', type=str, default='data/rsgpt_dataset/', help= 'Path to the RSGPT Dataset')
+
 args = parser.parse_args()
 
 assert args.encoder in [CLIP, REMOTE_CLIP, VGG]
@@ -57,9 +59,15 @@ print(f'Using device: {device}')
 net = ClipGPT(device=device, encoder=args.encoder, dropout=args.dropout).to(device)
 
 # load datasets
-datasets = args.dataset.split(',') if args.dataset else ['rsicd', 'ucm', 'nwpu', 'sidney']
-kwargs = {'rsicd_path': args.rsicd_path, 'ucm_path': args.ucm_path, 'nwpu_path': args.nwpu_path, 'sydney_path': args.sydney_path}
-dataset_train, dataset_val = get_datasets(net.preprocess, datasets, **kwargs)
+datasets = args.dataset.split(',') if args.dataset else ['rsgpt']
+kwargs = {'rsgpt_path': args.rsgpt_path}
+#dataset_train, dataset_val = get_datasets(net.preprocess, datasets, **kwargs)
+dataset = get_dataset(net.preprocess, datasets, **kwargs)
+
+dataset_train_size = int(0.8 * len(dataset))
+dataset_val_size = len(dataset) - dataset_train_size
+
+dataset_train, dataset_val = torch.utils.data.random_split(dataset, [dataset_train_size, dataset_val_size])
 dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn_train)
 dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn_val)
  
@@ -124,7 +132,7 @@ for epoch in train_pbar:
     count = 0
     with torch.no_grad():
         val_pbar = tqdm(dataloader_val, total=len(dataloader_val), leave=False, desc=f'Validation {epoch}/{args.epochs}')
-        for b, (images, captions) in enumerate(val_pbar):
+        for _ , (images, captions) in enumerate(val_pbar):
             # generate captions
             images = images.to(device)
             results = net.get_caption(images)

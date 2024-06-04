@@ -6,6 +6,7 @@ import json
 import os
 from typing import List, Dict
 from PIL import Image
+from rsgpt import RSGPT
 
 # datasets: https://github.com/201528014227051/RSICD_optimal?tab=readme-ov-file
 
@@ -238,3 +239,23 @@ def get_test_datasets(transform):
         print("Sidney dataset is not available")
 
     return datasets
+
+def get_dataset(transform, dataset_names=["rsgpt"], **kwargs):
+    datasets_train = []
+
+    path_rsgpt = kwargs.get("rsgpt_path", "data/rsgpt_dataset/")
+
+    # RSGPT datasets
+    if "rsgpt" in dataset_names and os.path.exists(os.path.join(path_rsgpt, "RSICap/images/P0000_0018.png")):
+        rsgpt_dataset_train = RSGPT(
+            root=path_rsgpt,
+            transform=transform
+        )
+        datasets_train.append(rsgpt_dataset_train)
+
+    elif "rsgpt" in dataset_names:
+        # warn user that RSGPT dataset is not available
+        print("RSGPT dataset is not available")
+
+
+    return ConcatDataset(datasets_train)
