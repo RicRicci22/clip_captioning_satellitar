@@ -43,7 +43,7 @@ class ClipGPT(nn.Module):
             self.encoder_final_dim = self.clip.visual.transformer.width
             
         elif encoder == VGG:
-            self.vgg = torch.hub.load('pytorch/vision:v0.10.0', 'vgg16', pretrained=True)
+            self.vgg = torch.hub.load('pytorch/vision:v0.10.0', 'vgg16', weights=VGG16_Weights.IMAGENET1K_V1)
             self.preprocess = transforms.Compose([
                 transforms.Resize(256),
                 transforms.CenterCrop(224),

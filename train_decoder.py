@@ -52,8 +52,9 @@ if not os.path.exists('data/models'):
 
 
 # load device
-device = args.device if args.device else 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
+device = args.device if args.device else 'cuda:1' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 print(f'Using device: {device}')
+print(f'Batches will be of size {args.batch_size}')
 
 # load model
 net = ClipGPT(device=device, encoder=args.encoder, dropout=args.dropout).to(device)
@@ -93,7 +94,7 @@ sched_gpt = get_cosine_schedule_with_warmup(
 best_score = 0
 spice_scorer = Spice()
 
-if device == 'cuda':
+if device == 'cuda:1':
     scaler = GradScaler()
 
 if args.log: 
@@ -112,7 +113,7 @@ for epoch in train_pbar:
             loss = net.train_generator(captions, images=images)
 
             # Backpropagation with gradient scaling
-            if device == 'cuda':
+            if device == 'cuda:1':
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
@@ -140,7 +141,15 @@ for epoch in train_pbar:
             for c in range(len(results)):
                 refs[count + c] = captions[c]
                 res[count + c] = [results[c]]
+
+                print("what is refs\n")
+                print(refs[count + c])
+                print("\nwhat is res\n")
+                print(res[count + c])
             count += len(results)
+
+
+        #exit(1)
 
         # non mi va spice sul mac
         if device == 'mps':
