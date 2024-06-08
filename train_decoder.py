@@ -50,25 +50,28 @@ assert args.dataset is None or args.dataset in [RSICD_, UCM, NWPU, SIDNEY]
 if not os.path.exists('data/models'):
     os.makedirs('data/models')
 
+DEVICE = 'cuda'
 
 # load device
-device = args.device if args.device else 'cuda:1' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
+device = args.device if args.device else DEVICE if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 print(f'Using device: {device}')
-print(f'Batches will be of size {args.batch_size}')
 
 # load model
 net = ClipGPT(device=device, encoder=args.encoder, dropout=args.dropout).to(device)
 
 # load datasets
-datasets = args.dataset.split(',') if args.dataset else ['rsgpt']
-kwargs = {'rsgpt_path': args.rsgpt_path}
+datasets = args.dataset.split(',') if args.dataset else ['ucm']
+#kwargs = {'rsgpt_path': args.rsgpt_path}
+kwargs = {'ucm_path': args.ucm_path }
+dataset_train, dataset_val = get_datasets(net.preprocess, datasets, **kwargs)
+#dataset = get_dataset(net.preprocess, datasets, **kwargs)
+#datasets = get_datasets(net.preprocess, datasets, **kwargs)
+
+#dataset_train_size = int(0.8 * len(dataset))
+#dataset_val_size = len(dataset) - dataset_train_size
+
+#dataset_train, dataset_val = torch.utils.data.random_split(dataset, [dataset_train_size, dataset_val_size])
 #dataset_train, dataset_val = get_datasets(net.preprocess, datasets, **kwargs)
-dataset = get_dataset(net.preprocess, datasets, **kwargs)
-
-dataset_train_size = int(0.8 * len(dataset))
-dataset_val_size = len(dataset) - dataset_train_size
-
-dataset_train, dataset_val = torch.utils.data.random_split(dataset, [dataset_train_size, dataset_val_size])
 dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn_train)
 dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn_val)
  
@@ -94,7 +97,7 @@ sched_gpt = get_cosine_schedule_with_warmup(
 best_score = 0
 spice_scorer = Spice()
 
-if device == 'cuda:1':
+if device == DEVICE:
     scaler = GradScaler()
 
 if args.log: 
@@ -113,7 +116,7 @@ for epoch in train_pbar:
             loss = net.train_generator(captions, images=images)
 
             # Backpropagation with gradient scaling
-            if device == 'cuda:1':
+            if device == DEVICE:
                 scaler.scale(loss).backward()
                 scaler.step(optimizer)
                 scaler.update()
