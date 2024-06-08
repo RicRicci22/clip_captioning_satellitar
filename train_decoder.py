@@ -60,18 +60,13 @@ print(f'Using device: {device}')
 net = ClipGPT(device=device, encoder=args.encoder, dropout=args.dropout).to(device)
 
 # load datasets
-datasets = args.dataset.split(',') if args.dataset else ['ucm']
-#kwargs = {'rsgpt_path': args.rsgpt_path}
-kwargs = {'ucm_path': args.ucm_path }
-dataset_train, dataset_val = get_datasets(net.preprocess, datasets, **kwargs)
-#dataset = get_dataset(net.preprocess, datasets, **kwargs)
-#datasets = get_datasets(net.preprocess, datasets, **kwargs)
+datasets = args.dataset.split(',') if args.dataset else ['rsgpt']
+kwargs = {'rsgpt_path': args.rsgpt_path}
+dataset = get_dataset(net.preprocess, datasets, **kwargs)
+dataset_train_size = int(0.8 * len(dataset))
+dataset_val_size = len(dataset) - dataset_train_size
 
-#dataset_train_size = int(0.8 * len(dataset))
-#dataset_val_size = len(dataset) - dataset_train_size
-
-#dataset_train, dataset_val = torch.utils.data.random_split(dataset, [dataset_train_size, dataset_val_size])
-#dataset_train, dataset_val = get_datasets(net.preprocess, datasets, **kwargs)
+dataset_train, dataset_val = torch.utils.data.random_split(dataset, [dataset_train_size, dataset_val_size])
 dataloader_train = DataLoader(dataset_train, batch_size=args.batch_size, shuffle=True, collate_fn=collate_fn_train)
 dataloader_val = DataLoader(dataset_val, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn_val)
  
@@ -145,14 +140,7 @@ for epoch in train_pbar:
                 refs[count + c] = captions[c]
                 res[count + c] = [results[c]]
 
-                print("what is refs\n")
-                print(refs[count + c])
-                print("\nwhat is res\n")
-                print(res[count + c])
             count += len(results)
-
-
-        #exit(1)
 
         # non mi va spice sul mac
         if device == 'mps':
