@@ -4,6 +4,7 @@ import clip
 from transformers import GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
 from torchvision import transforms
 from huggingface_hub import hf_hub_download
+from torchvision.models.vgg import  VGG16_Weights
 
 CLIP = 'clip'
 VGG = 'vgg'
