@@ -21,8 +21,8 @@ class RSGPT(torch.utils.data.Dataset):
         
         self.root = root
         self.transform = transform
-        self.captions = self.load_captions(os.path.join(self.root, "RSICap/captions.json"))
-        self.image_root = "RSICap/images"
+        self.captions = self.load_captions(os.path.join(self.root, "captions.json"))
+        self.image_root = "images"
 
     @staticmethod
     def load_captions(path: str) -> List[Dict]:

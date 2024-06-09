@@ -13,7 +13,7 @@ from pycocoevalcap.spice.spice import Spice
 from pycocoevalcap.meteor.meteor import Meteor
 
 import numpy as np
-from dataset import get_test_datasets
+from dataset import get_test_datasets, get_test_gpt_dataste
 
 import nltk
 import argparse
@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(description='Evaluation script for captioning m
 parser.add_argument('--encoder', type=str, default='REMOTE_CLIP', help='Encoder type')
 parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu', help='Device type')
 parser.add_argument('--path', type=str, default='data/models/full.pth', help='Path to the model checkpoint')
-parser.add_argument('--batch_size', type=int, default=16, help='Batch size for evaluation')
+parser.add_argument('--batch_size', type=int, default=32, help='Batch size for evaluation')
 
 args = parser.parse_args()
 
@@ -44,7 +44,8 @@ def collate_fn(batch):
     captions = [ item['captions'] for item in batch]
     return torch.stack(images), captions
 
-test_datasets = get_test_datasets(net.preprocess)
+#test_datasets = get_test_datasets(net.preprocess)
+test_datasets = get_test_gpt_dataste(net.preprocess)
 
 bleu_scorer = Bleu(n=4)
 
@@ -68,8 +69,10 @@ def test(dataloader):
             # captions = [[captions[j][i] for j in range(len(captions))] for i in range(len(captions[0]))]
 
             for b in range(len(captions)):
-                refs[count + b] = captions[b]
-                res[count + b] = [results[b]]
+                # Clean captions to remove anomalies
+                if results[b].strip() != "":
+                    refs[count + b] = captions[b]
+                    res[count + b] = [results[b].strip()]
 
             count += len(captions)
 
@@ -154,3 +157,18 @@ if 'nwpu' in test_datasets.keys():
     print(f'NWPUCaptions SPICE: {res["spice"]}')
     print('\n\n')
 
+if 'rsgpt' in test_datasets.keys():
+    rsgptcaptions_dataset = test_datasets['rsgpt']
+    rsgptcaptions_dataloader = DataLoader(rsgptcaptions_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=collate_fn)
+    res = test(rsgptcaptions_dataloader)
+
+    print("-------------- RSGPTCaptions results --------------")
+    print(f'RSGPTCaptions BLEU1: {res["bleu1"]}')
+    print(f'RSGPTCaptions BLEU2: {res["bleu2"]}')
+    print(f'RSGPTCaptions BLEU3: {res["bleu3"]}')
+    print(f'RSGPTCaptions BLEU4: {res["bleu4"]}')
+    print(f'RSGPTCaptions ROUGE: {res["rouge"]}')
+    print(f'RSGPTCaptions CIDER: {res["cider"]}')
+    print(f'RSGPTCaptions METEOR: {res["meteor"]}')
+    print(f'RSGPTCaptions SPICE: {res["spice"]}')
+    print('\n\n')

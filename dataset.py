@@ -186,6 +186,22 @@ def get_datasets(transform, dataset_names=["rsicd", "ucm", "nwpu", "sidney"], **
 
     return ConcatDataset(datasets_train), ConcatDataset(datasets_val)
 
+def get_test_gpt_dataste(transform):
+    datasets = {}
+    
+    # RSGPT Captions datasets
+    if os.path.exists("data/rsgpt_dataset/RSIEval/images/P0003_0003.png"):
+        rsgpt = RSGPT(
+            root="data/rsgpt_dataset/RSIEval/",
+            transform=transform
+        )
+        datasets["rsgpt"] = rsgpt
+    else:
+        # warn user that RSGPT dataset is not available
+        print("RSGPT dataset is not available")
+
+    return datasets
+
 
 def get_test_datasets(transform):
     datasets = {}
@@ -243,10 +259,11 @@ def get_test_datasets(transform):
 def get_dataset(transform, dataset_names=["rsgpt"], **kwargs):
     datasets_train = []
 
-    path_rsgpt = kwargs.get("rsgpt_path", "data/rsgpt_dataset/")
+    path_rsgpt = kwargs.get("rsgpt_path", "data/rsgpt_dataset/RSICap/")
+    path_rsgpt += "RSICap/"
 
     # RSGPT datasets
-    if "rsgpt" in dataset_names and os.path.exists(os.path.join(path_rsgpt, "RSICap/images/P0000_0018.png")):
+    if "rsgpt" in dataset_names and os.path.exists(os.path.join(path_rsgpt, "images/P0000_0018.png")):
         rsgpt_dataset_train = RSGPT(
             root=path_rsgpt,
             transform=transform
