@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import random
 
 def collate_fn_train(batch):
     """
@@ -20,3 +21,9 @@ def collate_fn_val(batch):
     # get a random caption from each image
     captions = [ item['captions'] for item in batch]
     return torch.stack(images), captions
+
+def enforce_determinism(seed:int):
+    np.random.seed(seed)
+    random.seed(0)
+    torch.manual_seed(seed)
+    torch.use_deterministic_algorithms(mode=True)

@@ -54,13 +54,14 @@ class VisGPT(nn.Module):
     def train_generator(self, captions, images):
         # Encode images or text to get CLIP embeddings
         decoder_embedding = self.encoder(images)
+        # Adapt to the dimensionality of gpt2 embeddings
+        decoder_embedding = self.adapter_layer(decoder_embedding)
         
         tokens = self.tokenizer(captions, return_tensors='pt', truncation=False, padding="longest")
         input_ids = tokens.input_ids.to(self.device)
         att_mask = tokens.attention_mask.to(self.device)
         
         gen_embeddings = self.generator.transformer.wte(input_ids)
-        decoder_embedding = self.adapter_layer(decoder_embedding)
   
         # Concatenate CLIP embeddings with generator embeddings
         emb_cat = torch.cat([decoder_embedding, gen_embeddings], dim=1)
@@ -70,12 +71,11 @@ class VisGPT(nn.Module):
         combined_att_mask = torch.cat([clip_attention_mask, att_mask], dim=1)
 
         with torch.no_grad():
-        # set the token corresponding to the CLIP embedding to -100
+        # set the label corresponding to the CLIP embedding to -100
             labels_img_tokens = torch.fill(torch.ones(input_ids.shape[0], decoder_embedding.shape[1]).long(), -100).to(self.device)
             input_ids[~att_mask.bool()] = -100
             labels = torch.cat([labels_img_tokens, input_ids], dim=1)
 
-        # positional embedding are automatically added by the model
         return self.generator(
             inputs_embeds=emb_cat, 
             attention_mask=combined_att_mask,
@@ -92,13 +92,7 @@ class VisGPT(nn.Module):
         Returns:
             List[str]: captions for the images
         """
-        if self.encoder.encoder_type == VGG:
-            decoder_embedding = self.encoder.feature_extractor(images)
-            decoder_embedding = decoder_embedding.permute(0, 2, 3, 1)
-            decoder_embedding = decoder_embedding.view(decoder_embedding.shape[0], -1, decoder_embedding.shape[-1])
-        elif self.encoder.encoder_type == CLIP:
-            decoder_embedding = self.encoder.visual_clip(images)
-
+        decoder_embedding = self.encoder(images)
         decoder_embedding = self.adapter_layer(decoder_embedding)
 
         # adding positional embeddings, I need them only here
