@@ -1,6 +1,6 @@
 # load model
 import torch
-from model import ClipGPT, REMOTE_CLIP, CLIP, VGG
+from model import VisGPT, REMOTE_CLIP, CLIP, VGG
 from dataset import NWPUCaptions, SidneyCaptions
 from torch.utils.data import DataLoader
 from torchrs.datasets import RSICD, UCMCaptions
@@ -13,7 +13,7 @@ from pycocoevalcap.spice.spice import Spice
 from pycocoevalcap.meteor.meteor import Meteor
 
 import numpy as np
-from dataset import get_test_datasets, get_test_gpt_dataste
+from dataset import get_test_datasets, get_test_gpt_dataset
 
 import nltk
 import argparse
@@ -32,7 +32,7 @@ assert args.device in ['cuda', 'cpu', 'mps']
 
 print(f'Using device: {args.device}')
 
-net = ClipGPT(device=args.device, encoder=args.encoder).to(args.device)
+net = VisGPT(device=args.device, encoder=args.encoder).to(args.device)
 net.load_state_dict(torch.load(args.path, map_location=args.device))
 
 def collate_fn(batch):
@@ -44,8 +44,7 @@ def collate_fn(batch):
     captions = [ item['captions'] for item in batch]
     return torch.stack(images), captions
 
-#test_datasets = get_test_datasets(net.preprocess)
-test_datasets = get_test_gpt_dataste(net.preprocess)
+test_datasets = get_test_gpt_dataset(net.encoder.preprocess)
 
 bleu_scorer = Bleu(n=4)
 
@@ -65,9 +64,7 @@ def test(dataloader):
         for images, captions in tqdm(dataloader):
             images = images.to(args.device)
             results = net.get_caption(images)
-
-            # captions = [[captions[j][i] for j in range(len(captions))] for i in range(len(captions[0]))]
-
+            print(results)
             for b in range(len(captions)):
                 # Clean captions to remove anomalies
                 if results[b].strip() != "":

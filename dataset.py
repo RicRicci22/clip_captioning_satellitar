@@ -186,13 +186,13 @@ def get_datasets(transform, dataset_names=["rsicd", "ucm", "nwpu", "sidney"], **
 
     return ConcatDataset(datasets_train), ConcatDataset(datasets_val)
 
-def get_test_gpt_dataste(transform):
+def get_test_gpt_dataset(transform):
     datasets = {}
     
-    # RSGPT Captions datasets
-    if os.path.exists("data/rsgpt_dataset/RSIEval/images/P0003_0003.png"):
+    # RSGPT Captions dataset
+    if os.path.exists("data/rsgpt_dataset/rsgpt_dataset/RSIEval/images/P0003_0003.png"):
         rsgpt = RSGPT(
-            root="data/rsgpt_dataset/RSIEval/",
+            root="data/rsgpt_dataset/rsgpt_dataset/RSIEval/",
             transform=transform
         )
         datasets["rsgpt"] = rsgpt
@@ -259,8 +259,7 @@ def get_test_datasets(transform):
 def get_dataset(transform, dataset_names=["rsgpt"], **kwargs):
     datasets_train = []
 
-    path_rsgpt = kwargs.get("rsgpt_path", "data/rsgpt_dataset/RSICap/")
-    path_rsgpt += "RSICap/"
+    path_rsgpt = kwargs.get("rsgpt_path", "data/rsgpt_dataset/rsgpt_dataset/")
 
     # RSGPT datasets
     if "rsgpt" in dataset_names and os.path.exists(os.path.join(path_rsgpt, "images/P0000_0018.png")):

@@ -1,1 +1,0 @@
-- [ ] provare con remoteCLIP https://github.com/ChenDelong1999/RemoteCLIP

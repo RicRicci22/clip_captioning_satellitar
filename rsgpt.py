@@ -26,6 +26,7 @@ class RSGPT(torch.utils.data.Dataset):
 
     @staticmethod
     def load_captions(path: str) -> List[Dict]:
+        print(path)
         with open(path) as f:
             captions = json.load(f)["annotations"]
         return captions
@@ -38,5 +39,5 @@ class RSGPT(torch.utils.data.Dataset):
         path = os.path.join(self.root, self.image_root, captions["filename"])
         x = Image.open(path).convert("RGB")
         x = self.transform(x)
-        sentences = [captions["caption"]]
-        return dict(x=x, captions=sentences)
+        sentence = [captions["caption"]+"<|endoftext|>"]
+        return dict(x=x, captions=sentence)
